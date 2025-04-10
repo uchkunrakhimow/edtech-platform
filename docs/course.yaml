@@ -1,0 +1,351 @@
+openapi: 3.0.0
+paths:
+  /course:
+    post:
+      tags:
+        - Courses
+      summary: Create a new course
+      description: Create a new course with the provided information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCourseInput'
+      responses:
+        201:
+          description: Course created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        404:
+          description: Instructor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: Course with this title already exists for this instructor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    get:
+      tags:
+        - Courses
+      summary: Get all courses
+      description: Retrieves a paginated list of all courses with optional filtering
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip for pagination
+        - name: take
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of records to take for pagination
+        - name: instructorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter courses by instructor ID
+        - name: searchTerm
+          in: query
+          schema:
+            type: string
+          description: Search term to filter courses by title or description
+      responses:
+        200:
+          description: List of courses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Course'
+                  count:
+                    type: integer
+                    description: Total number of courses matching the criteria
+        400:
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /course/popular:
+    get:
+      tags:
+        - Courses
+      summary: Get popular courses
+      description: Retrieves a list of popular courses based on view count
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+          description: Number of popular courses to retrieve
+      responses:
+        200:
+          description: List of popular courses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Course'
+
+  /course/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Course ID
+    get:
+      tags:
+        - Courses
+      summary: Get course by ID
+      description: Retrieves a specific course by its ID and increments its view count
+      responses:
+        200:
+          description: Course retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        404:
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Courses
+      summary: Update course
+      description: Update a specific course by its ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCourseInput'
+      responses:
+        200:
+          description: Course updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        404:
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: Course with this title already exists for this instructor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      tags:
+        - Courses
+      summary: Delete course
+      description: Delete a specific course by its ID
+      responses:
+        204:
+          description: Course deleted successfully
+        404:
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the course
+        title:
+          type: string
+          description: Course title
+        description:
+          type: string
+          description: Course description
+        price:
+          type: number
+          format: float
+          description: Course price
+        videoCount:
+          type: integer
+          description: Number of videos in the course
+        duration:
+          type: integer
+          description: Total duration of the course in minutes
+        instructorId:
+          type: string
+          format: uuid
+          description: ID of the instructor who created the course
+        viewCount:
+          type: integer
+          description: Number of times the course has been viewed
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the course was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the course was last updated
+        instructor:
+          $ref: '#/components/schemas/Instructor'
+      required:
+        - id
+        - title
+        - description
+        - price
+        - videoCount
+        - duration
+        - instructorId
+        - viewCount
+
+    Instructor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the instructor
+        name:
+          type: string
+          description: Instructor's name
+        email:
+          type: string
+          format: email
+          description: Instructor's email
+      required:
+        - id
+        - name
+        - email
+
+    CreateCourseInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Course title
+        description:
+          type: string
+          description: Course description
+        price:
+          type: number
+          format: float
+          description: Course price
+        videoCount:
+          type: integer
+          description: Number of videos in the course
+        duration:
+          type: integer
+          description: Total duration of the course in minutes
+        instructorId:
+          type: string
+          format: uuid
+          description: ID of the instructor who created the course
+      required:
+        - title
+        - description
+        - price
+        - videoCount
+        - duration
+        - instructorId
+
+    UpdateCourseInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Course title
+        description:
+          type: string
+          description: Course description
+        price:
+          type: number
+          format: float
+          description: Course price
+        videoCount:
+          type: integer
+          description: Number of videos in the course
+        duration:
+          type: integer
+          description: Total duration of the course in minutes
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+          description: Error message
+      required:
+        - status
+        - message
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        errors:
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            formErrors:
+              type: array
+              items:
+                type: string

@@ -1,0 +1,335 @@
+openapi: 3.0.0
+paths:
+  /test:
+    post:
+      tags:
+        - Tests
+      summary: Create a new test
+      description: Create a new test for a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestInput'
+      responses:
+        201:
+          description: Test created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    get:
+      tags:
+        - Tests
+      summary: Get all tests
+      description: Retrieves a paginated list of all tests
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip for pagination
+        - name: take
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of records to take for pagination
+      responses:
+        200:
+          description: List of tests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Test'
+                      count:
+                        type: integer
+                        description: Total number of tests
+        400:
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /test/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Test ID
+    get:
+      tags:
+        - Tests
+      summary: Get test by ID
+      description: Retrieves a specific test by its ID
+      responses:
+        200:
+          description: Test retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        404:
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Tests
+      summary: Update test
+      description: Update a specific test by its ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestInput'
+      responses:
+        200:
+          description: Test updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        404:
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      tags:
+        - Tests
+      summary: Delete test
+      description: Delete a specific test by its ID
+      responses:
+        204:
+          description: Test deleted successfully
+        404:
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /test/course/{courseId}:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Course ID
+    get:
+      tags:
+        - Tests
+      summary: Get tests by course ID
+      description: Retrieves all tests associated with a specific course
+      responses:
+        200:
+          description: Tests for course retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Test'
+        400:
+          description: Bad request - Invalid course ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+components:
+  schemas:
+    Test:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the test
+        title:
+          type: string
+          description: Test title
+        courseId:
+          type: string
+          format: uuid
+          description: ID of the course this test belongs to
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the test was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the test was last updated
+        course:
+          $ref: '#/components/schemas/Course'
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+          description: List of questions in this test
+      required:
+        - id
+        - title
+        - courseId
+        - createdAt
+        - updatedAt
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the course
+        title:
+          type: string
+          description: Course title
+      required:
+        - id
+        - title
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the question
+        text:
+          type: string
+          description: Question text
+        testId:
+          type: string
+          format: uuid
+          description: ID of the test this question belongs to
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Option'
+          description: List of options for this question
+      required:
+        - id
+        - text
+        - testId
+
+    Option:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the option
+        text:
+          type: string
+          description: Option text
+        isCorrect:
+          type: boolean
+          description: Whether this option is correct
+        questionId:
+          type: string
+          format: uuid
+          description: ID of the question this option belongs to
+      required:
+        - id
+        - text
+        - isCorrect
+        - questionId
+
+    CreateTestInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Test title
+        courseId:
+          type: string
+          format: uuid
+          description: ID of the course this test belongs to
+      required:
+        - title
+        - courseId
+
+    UpdateTestInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Test title
+      required:
+        - title
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+          description: Error message
+      required:
+        - status
+        - message
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        errors:
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            formErrors:
+              type: array
+              items:
+                type: string

@@ -1,0 +1,305 @@
+openapi: 3.0.0
+paths:
+  /test-result:
+    post:
+      tags:
+        - Test Results
+      summary: Create a new test result
+      description: Record a user's score for a test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestResultInput'
+      responses:
+        201:
+          description: Test result created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResult'
+        404:
+          description: User or test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: Test result already exists for this user and test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    get:
+      tags:
+        - Test Results
+      summary: Get all test results
+      description: Retrieves a paginated list of all test results with optional filtering
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip for pagination
+        - name: take
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of records to take for pagination
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter test results by user ID
+        - name: testId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter test results by test ID
+      responses:
+        200:
+          description: List of test results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TestResult'
+                      count:
+                        type: integer
+                        description: Total number of test results matching the criteria
+        400:
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /test-result/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Test Result ID
+    get:
+      tags:
+        - Test Results
+      summary: Get test result by ID
+      description: Retrieves a specific test result by its ID
+      responses:
+        200:
+          description: Test result retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResult'
+        404:
+          description: Test result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Test Results
+      summary: Update test result
+      description: Update a specific test result's score by its ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestResultInput'
+      responses:
+        200:
+          description: Test result updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResult'
+        404:
+          description: Test result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      tags:
+        - Test Results
+      summary: Delete test result
+      description: Delete a specific test result by its ID
+      responses:
+        204:
+          description: Test result deleted successfully
+        404:
+          description: Test result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TestResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the test result
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who took the test
+        testId:
+          type: string
+          format: uuid
+          description: ID of the test that was taken
+        score:
+          type: number
+          format: float
+          description: Score achieved by the user
+        completedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the test was completed
+        user:
+          $ref: '#/components/schemas/User'
+        test:
+          $ref: '#/components/schemas/Test'
+      required:
+        - id
+        - userId
+        - testId
+        - score
+        - completedAt
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+        name:
+          type: string
+          description: User's name
+        email:
+          type: string
+          format: email
+          description: User's email address
+      required:
+        - id
+        - name
+        - email
+
+    Test:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the test
+        title:
+          type: string
+          description: Test title
+        courseId:
+          type: string
+          format: uuid
+          description: ID of the course this test belongs to
+      required:
+        - id
+        - title
+        - courseId
+
+    CreateTestResultInput:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user taking the test
+        testId:
+          type: string
+          format: uuid
+          description: ID of the test being taken
+        score:
+          type: number
+          format: float
+          description: Score achieved by the user
+      required:
+        - userId
+        - testId
+        - score
+
+    UpdateTestResultInput:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          description: Updated score for the test result
+      required:
+        - score
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+          description: Error message
+      required:
+        - status
+        - message
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        errors:
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            formErrors:
+              type: array
+              items:
+                type: string

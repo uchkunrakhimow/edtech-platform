@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  phoneNumber   String?       @unique
+  password      String
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  enrollments   Enrollment[]
+  teacherCourses Course[]
+  testResults   TestResult[]
+}
+
+model Course {
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  price           Float
+  videoCount      Int
+  duration        Int           // in minutes
+  instructor      User          @relation(fields: [instructorId], references: [id])
+  instructorId    String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  enrollments     Enrollment[]
+  tests           Test[]
+  viewCount       Int           @default(0)
+}
+
+model Test {
+  id          String        @id @default(uuid())
+  title       String
+  course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId    String
+  results     TestResult[]
+}
+
+model Enrollment {
+  id            String      @id @default(uuid())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId      String
+  enrolledAt    DateTime    @default(now())
+  progress      Float       @default(0)
+
+  @@unique([userId, courseId])
+}
+
+model TestResult {
+  id          String      @id @default(uuid())
+  score       Float
+  test        Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  takenAt     DateTime    @default(now())
+
+  @@unique([userId, testId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  TEACHER
+}

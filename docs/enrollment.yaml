@@ -1,0 +1,239 @@
+openapi: 3.0.0
+paths:
+  /enrollment:
+    post:
+      tags:
+        - Enrollments
+      summary: Create a new enrollment
+      description: Enroll a user in a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnrollmentInput'
+      responses:
+        201:
+          description: Enrollment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        409:
+          description: User is already enrolled in this course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        400:
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    get:
+      tags:
+        - Enrollments
+      summary: Get all enrollments
+      description: Retrieves a paginated list of all enrollments with optional filtering
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip for pagination
+        - name: take
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of records to take for pagination
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter enrollments by user ID
+        - name: courseId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter enrollments by course ID
+      responses:
+        200:
+          description: List of enrollments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Enrollment'
+                      count:
+                        type: integer
+                        description: Total number of enrollments matching the criteria
+        400:
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /enrollment/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Enrollment ID
+    get:
+      tags:
+        - Enrollments
+      summary: Get enrollment by ID
+      description: Retrieves a specific enrollment by its ID
+      responses:
+        200:
+          description: Enrollment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        404:
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the enrollment
+        userId:
+          type: string
+          format: uuid
+          description: ID of the enrolled user
+        courseId:
+          type: string
+          format: uuid
+          description: ID of the course
+        enrolledAt:
+          type: string
+          format: date-time
+          description: Timestamp when the enrollment was created
+        user:
+          $ref: '#/components/schemas/User'
+        course:
+          $ref: '#/components/schemas/Course'
+      required:
+        - id
+        - userId
+        - courseId
+        - enrolledAt
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+        name:
+          type: string
+          description: User's name
+        email:
+          type: string
+          format: email
+          description: User's email address
+      required:
+        - id
+        - name
+        - email
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the course
+        title:
+          type: string
+          description: Course title
+        description:
+          type: string
+          description: Course description
+        price:
+          type: number
+          format: float
+          description: Course price
+      required:
+        - id
+        - title
+        - description
+        - price
+
+    CreateEnrollmentInput:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user to enroll
+        courseId:
+          type: string
+          format: uuid
+          description: ID of the course to enroll in
+      required:
+        - userId
+        - courseId
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+          description: Error message
+      required:
+        - status
+        - message
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        errors:
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            formErrors:
+              type: array
+              items:
+                type: string
