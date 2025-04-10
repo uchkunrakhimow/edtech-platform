@@ -1,0 +1,40 @@
+# Node modules
+node_modules
+client/node_modules
+
+# Build files
+dist
+client/dist
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+.git
+.github
+.vscode
+.idea
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Test files
+coverage
+.nyc_output
+
+# Docker files (to avoid recursive copying)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
